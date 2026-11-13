@@ -1,0 +1,658 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if page_title %}{{ page_title }}{% else %}Объявления{% endif %}</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #f4f5f9;
+            color: #202638;
+            font-family: Arial, sans-serif;
+        }
+
+        a { color: inherit; text-decoration: none; }
+        button, input, textarea, select { font: inherit; }
+
+        .navbar {
+            min-height: 72px;
+            padding: 15px 7%;
+            background: #202b3c;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            font-size: 23px;
+            font-weight: 800;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a, .logout-button {
+            color: #e2e6ef;
+            font-size: 14px;
+        }
+
+        .nav-links a:hover, .logout-button:hover { color: white; }
+
+        .logout-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .container {
+            width: 86%;
+            max-width: 1250px;
+            min-height: 70vh;
+            margin: 38px auto;
+        }
+
+        .title {
+            font-size: 30px;
+            margin: 0 0 10px;
+        }
+
+        .subtitle {
+            color: #858c9b;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 9px;
+            background: #5269e8;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .btn:hover { background: #4055ce; }
+
+        .secondary {
+            background: #e9ecf5;
+            color: #35405b;
+        }
+
+        .secondary:hover { background: #dce1ef; }
+
+        .danger { background: #e34f5b; }
+        .danger:hover { background: #c83c49; }
+
+        .search {
+            display: flex;
+            gap: 12px;
+            padding: 17px;
+            margin-bottom: 28px;
+            background: white;
+            border: 1px solid #e7e9ef;
+            border-radius: 13px;
+        }
+
+        .input {
+            width: 100%;
+            padding: 13px 15px;
+            border: 1px solid #dfe2ea;
+            border-radius: 9px;
+            outline: none;
+            background: white;
+            color: #202638;
+        }
+
+        .input:focus { border-color: #5269e8; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 22px;
+        }
+
+        .card {
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border: 1px solid #e8eaf0;
+            border-radius: 15px;
+            padding: 22px;
+            transition: .2s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 28px #20263810;
+        }
+
+        .category {
+            display: inline-block;
+            width: fit-content;
+            padding: 6px 10px;
+            margin-bottom: 13px;
+            border-radius: 6px;
+            background: #eef0ff;
+            color: #5269e8;
+            font-size: 12px;
+        }
+
+        .card h3 {
+            font-size: 19px;
+            margin: 0 0 10px;
+            overflow-wrap: anywhere;
+        }
+
+        .description {
+            color: #777f90;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0 0 17px;
+            overflow-wrap: anywhere;
+        }
+
+        .price {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: auto;
+            margin-bottom: 15px;
+        }
+
+        .meta {
+            color: #969dac;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 9px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .empty {
+            padding: 45px 20px;
+            background: white;
+            border: 1px solid #e8eaf0;
+            border-radius: 15px;
+            text-align: center;
+            color: #7c8495;
+        }
+
+        .form-box, .detail-box {
+            max-width: 760px;
+            padding: 28px;
+            background: white;
+            border: 1px solid #e8eaf0;
+            border-radius: 15px;
+        }
+
+        .form-group { margin-bottom: 20px; }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 9px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .form-errors {
+            color: #d53e4b;
+            font-size: 13px;
+            margin-top: 7px;
+        }
+
+        .help-text {
+            color: #858c9b;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .detail-description {
+            margin: 25px 0;
+            color: #626b7c;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .messages { margin-bottom: 22px; }
+
+        .message {
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            border-radius: 9px;
+            background: #e4f7e9;
+            color: #267541;
+        }
+
+        .footer {
+            padding: 25px;
+            margin-top: 50px;
+            background: #202b3c;
+            color: #aeb8c9;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .navbar { padding: 20px 5%; }
+        }
+
+        @media (max-width: 600px) {
+            .container { width: 92%; margin-top: 25px; }
+            .grid { grid-template-columns: 1fr; }
+            .search { flex-direction: column; }
+            .title { font-size: 25px; }
+        }
+        .form-box input,
+        .form-box select,
+        .form-box textarea {
+        width: 100%;
+        padding: 13px 15px;
+        border: 1px solid #dfe2ea;
+        border-radius: 9px;
+        outline: none;
+        background: white;
+        color: #202638;
+        }
+
+        .form-box ul {
+        padding-left: 20px;
+        color: #858c9b;
+        font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="navbar">
+    <a href="{% url 'home' %}" class="logo">Объявления</a>
+
+    <nav class="nav-links">
+        <a href="{% url 'home' %}">Главная</a>
+
+        {% if user.is_authenticated %}
+            <a href="{% url 'create_announcement' %}">Создать</a>
+            <a href="{% url 'my_announcements' %}">Мои объявления</a>
+            <a href="{% url 'subscriptions' %}">Подписки</a>
+            <a href="{% url 'saved' %}">Избранное</a>
+
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button class="logout-button" type="submit">Выйти</button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}">Войти</a>
+            <a href="{% url 'register' %}">Регистрация</a>
+        {% endif %}
+    </nav>
+</header>
+
+<main class="container">
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+
+    {% if page == 'home' %}
+
+        <h1 class="title">Найдите то, что ищете</h1>
+        <p class="subtitle">Просматривайте объявления или публикуйте собственные</p>
+
+        <form method="get" class="search">
+            <input class="input" name="q" value="{{ search_query }}"
+                   placeholder="Поиск объявлений...">
+
+            <select class="input" name="category">
+                <option value="">Все категории</option>
+                {% for value, label in categories %}
+                    <option value="{{ value }}"
+                        {% if selected_category == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button class="btn" type="submit">Найти</button>
+        </form>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:20px;">
+            <h2>Все объявления</h2>
+            {% if user.is_authenticated %}
+                <a class="btn" href="{% url 'create_announcement' %}">+ Создать</a>
+            {% endif %}
+        </div>
+
+    {% elif page == 'my' %}
+        <h1 class="title">Мои объявления</h1>
+        <p class="subtitle">Управляйте своими публикациями.</p>
+        <a class="btn" href="{% url 'create_announcement' %}" style="margin-bottom:22px;">+ Новое объявление</a>
+
+    {% elif page == 'subscriptions' %}
+        <h1 class="title">Мои подписки</h1>
+        <p class="subtitle">Объявления, за которыми вы следите</p>
+
+    {% elif page == 'saved' %}
+        <h1 class="title">Избранное</h1>
+        <p class="subtitle">Сохранённые вами объявления</p>
+    {% endif %}
+
+
+    {% if page == 'home' or page == 'my' or page == 'subscriptions' or page == 'saved' %}
+
+        {% if announcements %}
+            <div class="grid">
+
+                {% for announcement in announcements %}
+                    <article class="card">
+
+                        <span class="category">{{ announcement.get_category_display }}</span>
+
+                        <h3>
+                            <a href="{% url 'announcement_detail' announcement.id %}">
+                                {{ announcement.title }}
+                            </a>
+                        </h3>
+
+                        <p class="description">
+                            {{ announcement.description|truncatechars:130 }}
+                        </p>
+
+                        <div class="price">
+                            {% if announcement.price != None %}
+                                {{ announcement.price|floatformat:2 }} $
+                            {% else %}
+                                Цена не указана
+                            {% endif %}
+                        </div>
+
+                        <div class="meta">
+                            Автор: {{ announcement.user.username }}
+                            · {{ announcement.created_at|date:"d.m.Y H:i" }}
+                            {% if page == 'my' %}
+                                · Подписчиков: {{ announcement.subscriptions_count }}
+                            {% endif %}
+                        </div>
+
+                        <a class="btn" href="{% url 'announcement_detail' announcement.id %}">
+                            Подробнее
+                        </a>
+
+                        {% if user.is_authenticated %}
+
+                            {% if page == 'my' %}
+                                <div class="actions">
+                                    <a class="btn secondary" href="{% url 'edit_announcement' announcement.id %}">Изменить</a>
+
+                                    <form method="post" action="{% url 'delete_announcement' announcement.id %}"
+                                          onsubmit="return confirm('Удалить объявление?');">
+                                        {% csrf_token %}
+                                        <button class="btn danger" type="submit">Удалить</button>
+                                    </form>
+                                </div>
+
+                            {% elif page == 'subscriptions' %}
+                                <form method="post" action="{% url 'unsubscribe_announcement' announcement.id %}" style="margin-top:10px;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button class="btn secondary" style="width:100%;" type="submit">Отписаться</button>
+                                </form>
+
+                            {% elif page == 'saved' %}
+                                <form method="post" action="{% url 'unsave_announcement' announcement.id %}" style="margin-top:10px;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button class="btn secondary" style="width:100%;" type="submit">Убрать из избранного</button>
+                                </form>
+
+                            {% elif page == 'home' and announcement.user != user %}
+                                {% if announcement.id in saved_ids %}
+                                    <form method="post" action="{% url 'unsave_announcement' announcement.id %}" style="margin-top:10px;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button class="btn secondary" style="width:100%;" type="submit">Убрать из избранного</button>
+                                    </form>
+                                {% else %}
+                                    <form method="post" action="{% url 'save_announcement' announcement.id %}" style="margin-top:10px;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button class="btn secondary" style="width:100%;" type="submit">В избранное</button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+
+                        {% endif %}
+
+                    </article>
+                {% endfor %}
+
+            </div>
+        {% else %}
+            <div class="empty">
+                <h3>Объявлений пока нет</h3>
+                <p>Попробуйте изменить поиск или опубликуйте первое объявление</p>
+                {% if user.is_authenticated %}
+                    <a class="btn" href="{% url 'create_announcement' %}">Создать объявление</a>
+                {% endif %}
+            </div>
+        {% endif %}
+
+    {% elif page == 'detail' %}
+
+        <div class="detail-box">
+            <span class="category">{{ announcement.get_category_display }}</span>
+
+            <h1 class="title">{{ announcement.title }}</h1>
+
+            <div class="meta">
+                Автор: {{ announcement.user.username }}
+                · {{ announcement.created_at|date:"d.m.Y H:i" }}
+                {% if announcement.updated_at != announcement.created_at %}
+                    · Изменено: {{ announcement.updated_at|date:"d.m.Y H:i" }}
+                {% endif %}
+            </div>
+
+            <div class="price">
+                {% if announcement.price != None %}
+                    {{ announcement.price|floatformat:2 }} сум
+                {% else %}
+                    Цена не указана
+                {% endif %}
+            </div>
+
+            <div class="detail-description">{{ announcement.description }}</div>
+
+            <div class="meta">
+                Подписчиков: {{ announcement.subscriptions_count }}
+                · В избранном: {{ announcement.saved_count }}
+            </div>
+
+            <div class="actions">
+                {% if user.is_authenticated %}
+                    {% if user == announcement.user %}
+                        <a class="btn" href="{% url 'edit_announcement' announcement.id %}">Редактировать</a>
+
+                        <form method="post" action="{% url 'delete_announcement' announcement.id %}"
+                              onsubmit="return confirm('Удалить объявление?');">
+                            {% csrf_token %}
+                            <button class="btn danger" type="submit">Удалить</button>
+                        </form>
+                    {% else %}
+                        {% if is_subscribed %}
+                            <form method="post" action="{% url 'unsubscribe_announcement' announcement.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button class="btn secondary" type="submit">Отписаться</button>
+                            </form>
+                        {% else %}
+                            <form method="post" action="{% url 'subscribe_announcement' announcement.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button class="btn" type="submit">Подписаться</button>
+                            </form>
+                        {% endif %}
+
+                        {% if is_saved %}
+                            <form method="post" action="{% url 'unsave_announcement' announcement.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button class="btn secondary" type="submit">Убрать из избранного</button>
+                            </form>
+                        {% else %}
+                            <form method="post" action="{% url 'save_announcement' announcement.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button class="btn secondary" type="submit">В избранное</button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    <a class="btn" href="{% url 'login' %}">Войдите, чтобы подписаться</a>
+                {% endif %}
+
+                <a class="btn secondary" href="{% url 'home' %}">Назад</a>
+            </div>
+        </div>
+
+    {% elif page == 'form' %}
+
+        <h1 class="title">{{ page_title }}</h1>
+        <p class="subtitle">Заполните информацию об объявлении.</p>
+
+        <div class="form-box">
+            <form method="post">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+
+                        {% if field.help_text %}
+                            <div class="help-text">{{ field.help_text }}</div>
+                        {% endif %}
+
+                        {% for error in field.errors %}
+                            <div class="form-errors">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                {% for error in form.non_field_errors %}
+                    <div class="form-errors">{{ error }}</div>
+                {% endfor %}
+
+                <button class="btn" type="submit">{{ button_text }}</button>
+                <a class="btn secondary" href="{% url 'home' %}">Отмена</a>
+            </form>
+        </div>
+
+    {% elif page == 'login' %}
+
+        <h1 class="title">Вход в аккаунт</h1>
+        <p class="subtitle">Войдите, чтобы пользоваться всеми возможностями сайта.</p>
+
+        <div class="form-box">
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="form-errors">Неправильное имя пользователя или пароль.</div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="id_username">Имя пользователя</label>
+                    <input class="input" type="text" name="username" id="id_username" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password">Пароль</label>
+                    <input class="input" type="password" name="password" id="id_password" required>
+                </div>
+
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <button class="btn" type="submit">Войти</button>
+            </form>
+
+            <p style="margin-top:20px;">
+                Нет аккаунта? <a href="{% url 'register' %}" style="color:#5269e8;">Регистрация</a>
+            </p>
+        </div>
+
+    {% elif page == 'register' %}
+
+        <h1 class="title">Создание аккаунта</h1>
+        <p class="subtitle">Зарегистрируйтесь, чтобы публиковать объявления.</p>
+
+        <div class="form-box">
+            <form method="post">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">
+                            {% if field.name == 'username' %}
+                                Имя пользователя
+                            {% elif field.name == 'password1' %}
+                                Пароль
+                            {% elif field.name == 'password2' %}
+                                Повторите пароль
+                            {% else %}
+                                {{ field.label }}
+                            {% endif %}
+                        </label>
+
+                        {{ field }}
+
+                        {% if field.help_text %}
+                            <div class="help-text">{{ field.help_text|safe }}</div>
+                        {% endif %}
+
+                        {% for error in field.errors %}
+                            <div class="form-errors">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <button class="btn" type="submit">Зарегистрироваться</button>
+            </form>
+
+            <p style="margin-top:20px;">
+                Уже есть аккаунт? <a href="{% url 'login' %}" style="color:#5269e8;">Войти</a>
+            </p>
+        </div>
+
+    {% endif %}
+
+</main>
+
+
+</body>
+</html>
