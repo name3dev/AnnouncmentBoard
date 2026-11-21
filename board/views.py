@@ -1,11 +1,11 @@
-from django.shortcuts import render, redirect, get_object_or_404
 
-# Create your views here.
+from django.shortcuts import render, redirect, get_object_or_404
 
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
+
 from django.db.models import Q, Count
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
@@ -34,6 +34,7 @@ def action_redirect(request, announcement):
     return redirect('announcement_detail', announcement_id=announcement.id)
 
 
+# Главная страница и поиск
 def home(request):
     announcements = Announcement.objects.filter(
         is_active=True
@@ -41,18 +42,22 @@ def home(request):
         subscriptions_count=Count('subscriptions', distinct=True)
     )
 
+    # Получаем текст поиска и выбранную категорию
     search_query = request.GET.get('q', '').strip()
     category = request.GET.get('category', '').strip()
 
+    # Поиск по названию или описанию
     if search_query:
         announcements = announcements.filter(
             Q(title__icontains=search_query) |
             Q(description__icontains=search_query)
         )
 
+    # Фильтр по категории
     if category:
         announcements = announcements.filter(category=category)
 
+    # Получаем ID сохранённых объявлений
     saved_ids = []
 
     if request.user.is_authenticated:
@@ -71,6 +76,7 @@ def home(request):
     )
 
 
+# Страница отдельного объявления
 def announcement_detail(request, announcement_id):
     announcement = get_object_or_404(
         Announcement.objects.select_related('user').annotate(
@@ -104,6 +110,7 @@ def announcement_detail(request, announcement_id):
     )
 
 
+# Создание объявления
 @login_required
 def create_announcement(request):
     form = AnnouncementForm(request.POST or None)
@@ -114,7 +121,11 @@ def create_announcement(request):
         announcement.save()
 
         messages.success(request, 'Объявление опубликовано!')
-        return redirect('announcement_detail', announcement_id=announcement.id)
+
+        return redirect(
+            'announcement_detail',
+            announcement_id=announcement.id
+        )
 
     return render_page(
         request,
@@ -125,6 +136,7 @@ def create_announcement(request):
     )
 
 
+# Редактирование объявления
 @login_required
 def edit_announcement(request, announcement_id):
     announcement = get_object_or_404(
@@ -133,12 +145,19 @@ def edit_announcement(request, announcement_id):
         user=request.user
     )
 
-    form = AnnouncementForm(request.POST or None, instance=announcement)
+    form = AnnouncementForm(
+        request.POST or None,
+        instance=announcement
+    )
 
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Объявление обновлено!')
-        return redirect('announcement_detail', announcement_id=announcement.id)
+
+        return redirect(
+            'announcement_detail',
+            announcement_id=announcement.id
+        )
 
     return render_page(
         request,
@@ -149,6 +168,7 @@ def edit_announcement(request, announcement_id):
     )
 
 
+# Удаление объявления
 @login_required
 @require_POST
 def delete_announcement(request, announcement_id):
@@ -164,6 +184,7 @@ def delete_announcement(request, announcement_id):
     return redirect('my_announcements')
 
 
+# Мои объявления
 @login_required
 def my_announcements(request):
     announcements = Announcement.objects.filter(
@@ -179,6 +200,7 @@ def my_announcements(request):
     )
 
 
+# Объявления, на которые подписан пользователь
 @login_required
 def subscriptions(request):
     announcements = Announcement.objects.filter(
@@ -193,6 +215,7 @@ def subscriptions(request):
     )
 
 
+# Сохранённые объявления
 @login_required
 def saved_announcements(request):
     announcements = Announcement.objects.filter(
@@ -207,6 +230,7 @@ def saved_announcements(request):
     )
 
 
+# Подписка на объявление
 @login_required
 @require_POST
 def subscribe_announcement(request, announcement_id):
@@ -225,6 +249,7 @@ def subscribe_announcement(request, announcement_id):
     return action_redirect(request, announcement)
 
 
+# Отписка от объявления
 @login_required
 @require_POST
 def unsubscribe_announcement(request, announcement_id):
@@ -241,6 +266,7 @@ def unsubscribe_announcement(request, announcement_id):
     return action_redirect(request, announcement)
 
 
+# Сохранение объявления
 @login_required
 @require_POST
 def save_announcement(request, announcement_id):
@@ -259,6 +285,7 @@ def save_announcement(request, announcement_id):
     return action_redirect(request, announcement)
 
 
+# Удаление из сохранённых
 @login_required
 @require_POST
 def unsave_announcement(request, announcement_id):
@@ -275,13 +302,16 @@ def unsave_announcement(request, announcement_id):
     return action_redirect(request, announcement)
 
 
+# Регистрация
 def register(request):
     form = UserCreationForm(request.POST or None)
 
     if request.method == 'POST' and form.is_valid():
         user = form.save()
         login(request, user)
+
         messages.success(request, 'Аккаунт успешно создан!')
+
         return redirect('home')
 
     return render_page(
