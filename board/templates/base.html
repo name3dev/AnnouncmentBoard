@@ -1,4 +1,3 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -30,11 +29,12 @@
             text-decoration: none;
         }
 
-        button, input, select, textarea {
+        button,
+        input,
+        select,
+        textarea {
             font: inherit;
         }
-
-        /* Шапка */
 
         .navbar {
             background: #202b3c;
@@ -76,8 +76,6 @@
             cursor: pointer;
         }
 
-        /* Основная часть */
-
         .container {
             width: 86%;
             max-width: 1250px;
@@ -95,8 +93,6 @@
             margin-bottom: 25px;
             line-height: 1.6;
         }
-
-        /* Кнопки */
 
         .btn {
             display: inline-block;
@@ -131,8 +127,6 @@
             background: #c83c49;
         }
 
-        /* Поиск */
-
         .search {
             display: flex;
             gap: 12px;
@@ -148,15 +142,13 @@
             padding: 13px 15px;
             border: 1px solid #dfe2ea;
             border-radius: 9px;
-            outline: none;
             background: white;
         }
 
         .input:focus {
+            outline: none;
             border-color: #5269e8;
         }
-
-        /* Карточки объявлений */
 
         .grid {
             display: grid;
@@ -191,7 +183,6 @@
         .card h3 {
             margin: 0 0 10px;
             font-size: 19px;
-            overflow-wrap: anywhere;
         }
 
         .description {
@@ -199,7 +190,6 @@
             font-size: 14px;
             line-height: 1.6;
             margin-bottom: 17px;
-            overflow-wrap: anywhere;
         }
 
         .price {
@@ -222,8 +212,6 @@
             margin-top: 15px;
         }
 
-        /* Пустой список */
-
         .empty {
             padding: 45px 20px;
             background: white;
@@ -232,8 +220,6 @@
             text-align: center;
             color: #7c8495;
         }
-
-        /* Формы и подробности */
 
         .form-box,
         .detail-box {
@@ -262,12 +248,12 @@
             padding: 13px 15px;
             border: 1px solid #dfe2ea;
             border-radius: 9px;
-            outline: none;
         }
 
         .form-box input:focus,
         .form-box select:focus,
         .form-box textarea:focus {
+            outline: none;
             border-color: #5269e8;
         }
 
@@ -294,10 +280,7 @@
             color: #626b7c;
             line-height: 1.8;
             white-space: pre-wrap;
-            overflow-wrap: anywhere;
         }
-
-        /* Сообщения */
 
         .messages {
             margin-bottom: 22px;
@@ -310,8 +293,6 @@
             background: #e4f7e9;
             color: #267541;
         }
-
-        /* Дополнительные стили */
 
         .page-actions {
             display: flex;
@@ -333,8 +314,6 @@
         .auth-text {
             margin-top: 20px;
         }
-
-        /* Адаптация под телефон */
 
         @media (max-width: 900px) {
             .grid {
@@ -373,8 +352,6 @@
 
 <body>
 
-<!-- Шапка сайта -->
-
 <header class="navbar">
 
     <a href="{% url 'home' %}" class="logo">
@@ -410,29 +387,19 @@
 
 </header>
 
-
 <main class="container">
-
-    <!-- Сообщения Django -->
 
     {% if messages %}
 
         <div class="messages">
-
             {% for message in messages %}
-
                 <div class="message">
                     {{ message }}
                 </div>
-
             {% endfor %}
-
         </div>
 
     {% endif %}
-
-
-    <!-- Главная страница -->
 
     {% if page == 'home' %}
 
@@ -457,12 +424,10 @@
                 <option value="">Все категории</option>
 
                 {% for value, label in categories %}
-
                     <option value="{{ value }}"
                         {% if selected_category == value %}selected{% endif %}>
                         {{ label }}
                     </option>
-
                 {% endfor %}
 
             </select>
@@ -478,17 +443,12 @@
             <h2>Все объявления</h2>
 
             {% if user.is_authenticated %}
-
                 <a class="btn" href="{% url 'create_announcement' %}">
                     + Создать
                 </a>
-
             {% endif %}
 
         </div>
-
-
-    <!-- Мои объявления -->
 
     {% elif page == 'my' %}
 
@@ -502,9 +462,6 @@
             + Новое объявление
         </a>
 
-
-    <!-- Подписки -->
-
     {% elif page == 'subscriptions' %}
 
         <h1 class="title">Мои подписки</h1>
@@ -512,9 +469,6 @@
         <p class="subtitle">
             Объявления, за которыми вы следите
         </p>
-
-
-    <!-- Избранное -->
 
     {% elif page == 'saved' %}
 
@@ -525,9 +479,6 @@
         </p>
 
     {% endif %}
-
-
-    <!-- Список объявлений -->
 
     {% if page == 'home' or page == 'my' or page == 'subscriptions' or page == 'saved' %}
 
@@ -554,17 +505,11 @@
                         </p>
 
                         <div class="price">
-
                             {% if announcement.price != None %}
-
                                 {{ announcement.price|floatformat:2 }} $
-
                             {% else %}
-
                                 Цена не указана
-
                             {% endif %}
-
                         </div>
 
                         <div class="meta">
@@ -574,9 +519,7 @@
                             · {{ announcement.created_at|date:"d.m.Y H:i" }}
 
                             {% if page == 'my' %}
-
                                 · Подписчиков: {{ announcement.subscriptions_count }}
-
                             {% endif %}
 
                         </div>
@@ -585,10 +528,7 @@
                             Подробнее
                         </a>
 
-
                         {% if user.is_authenticated %}
-
-                            <!-- Кнопки владельца -->
 
                             {% if page == 'my' %}
 
@@ -613,9 +553,6 @@
 
                                 </div>
 
-
-                            <!-- Отписка -->
-
                             {% elif page == 'subscriptions' %}
 
                                 <form method="post"
@@ -634,9 +571,6 @@
 
                                 </form>
 
-
-                            <!-- Удаление из избранного -->
-
                             {% elif page == 'saved' %}
 
                                 <form method="post"
@@ -654,9 +588,6 @@
                                     </button>
 
                                 </form>
-
-
-                            <!-- Избранное на главной -->
 
                             {% elif page == 'home' and announcement.user != user %}
 
@@ -708,7 +639,6 @@
 
             </div>
 
-
         {% else %}
 
             <div class="empty">
@@ -720,19 +650,14 @@
                 </p>
 
                 {% if user.is_authenticated %}
-
                     <a class="btn" href="{% url 'create_announcement' %}">
                         Создать объявление
                     </a>
-
                 {% endif %}
 
             </div>
 
         {% endif %}
-
-
-    <!-- Подробности объявления -->
 
     {% elif page == 'detail' %}
 
@@ -753,9 +678,7 @@
                 · {{ announcement.created_at|date:"d.m.Y H:i" }}
 
                 {% if announcement.updated_at != announcement.created_at %}
-
                     · Изменено: {{ announcement.updated_at|date:"d.m.Y H:i" }}
-
                 {% endif %}
 
             </div>
@@ -763,13 +686,9 @@
             <div class="price">
 
                 {% if announcement.price != None %}
-
                     {{ announcement.price|floatformat:2 }} $
-
                 {% else %}
-
                     Цена не указана
-
                 {% endif %}
 
             </div>
@@ -847,7 +766,6 @@
 
                         {% endif %}
 
-
                         {% if is_saved %}
 
                             <form method="post"
@@ -902,9 +820,6 @@
 
         </div>
 
-
-    <!-- Создание и редактирование -->
-
     {% elif page == 'form' %}
 
         <h1 class="title">
@@ -932,19 +847,15 @@
                         {{ field }}
 
                         {% if field.help_text %}
-
                             <div class="help-text">
                                 {{ field.help_text }}
                             </div>
-
                         {% endif %}
 
                         {% for error in field.errors %}
-
                             <div class="form-errors">
                                 {{ error }}
                             </div>
-
                         {% endfor %}
 
                     </div>
@@ -952,11 +863,9 @@
                 {% endfor %}
 
                 {% for error in form.non_field_errors %}
-
                     <div class="form-errors">
                         {{ error }}
                     </div>
-
                 {% endfor %}
 
                 <button class="btn" type="submit">
@@ -970,9 +879,6 @@
             </form>
 
         </div>
-
-
-    <!-- Вход -->
 
     {% elif page == 'login' %}
 
@@ -991,11 +897,9 @@
                 {% csrf_token %}
 
                 {% if form.non_field_errors %}
-
                     <div class="form-errors">
                         Неправильное имя пользователя или пароль.
                     </div>
-
                 {% endif %}
 
                 <div class="form-group">
@@ -1048,9 +952,6 @@
 
         </div>
 
-
-    <!-- Регистрация -->
-
     {% elif page == 'register' %}
 
         <h1 class="title">
@@ -1074,21 +975,13 @@
                         <label for="{{ field.id_for_label }}">
 
                             {% if field.name == 'username' %}
-
                                 Имя пользователя
-
                             {% elif field.name == 'password1' %}
-
                                 Пароль
-
                             {% elif field.name == 'password2' %}
-
                                 Повторите пароль
-
                             {% else %}
-
                                 {{ field.label }}
-
                             {% endif %}
 
                         </label>
@@ -1096,19 +989,15 @@
                         {{ field }}
 
                         {% if field.help_text %}
-
                             <div class="help-text">
                                 {{ field.help_text|safe }}
                             </div>
-
                         {% endif %}
 
                         {% for error in field.errors %}
-
                             <div class="form-errors">
                                 {{ error }}
                             </div>
-
                         {% endfor %}
 
                     </div>

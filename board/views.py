@@ -1,88 +1,59 @@
-
 from django.shortcuts import render, redirect, get_object_or_404
-
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
-
-from django.db.models import Q, Count
-from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_POST
+from django.db.models import Q
 
 from .models import Announcement, AnnouncementSubscription, SavedAnnouncement
 from .forms import AnnouncementForm
 
 
-def render_page(request, page, **context):
-    return render(request, 'base.html', {
-        'page': page,
-        **context
-    })
+def render_page(request, page, context=None):
+    if context is None:
+        context = {}
+
+    context['page'] = page
+
+    return render(request, 'base.html', context)
 
 
-def action_redirect(request, announcement):
-    next_url = request.POST.get('next', '')
+def action_redirect(request):
+    next_url = request.POST.get('next')
 
-    if next_url and url_has_allowed_host_and_scheme(
-        next_url,
-        allowed_hosts={request.get_host()},
-        require_https=request.is_secure()
-    ):
+    if next_url and next_url.startswith('/') and not next_url.startswith('//'):
         return redirect(next_url)
 
-    return redirect('announcement_detail', announcement_id=announcement.id)
+    return redirect('home')
 
 
-# Главная страница и поиск
 def home(request):
-    announcements = Announcement.objects.filter(
-        is_active=True
-    ).select_related('user').annotate(
-        subscriptions_count=Count('subscriptions', distinct=True)
-    )
+    announcements = Announcement.objects.filter(is_active=True).order_by('-created_at')
 
-    # Получаем текст поиска и выбранную категорию
-    search_query = request.GET.get('q', '').strip()
-    category = request.GET.get('category', '').strip()
+    search = request.GET.get('q', '')
+    category = request.GET.get('category', '')
 
-    # Поиск по названию или описанию
-    if search_query:
+    if search:
         announcements = announcements.filter(
-            Q(title__icontains=search_query) |
-            Q(description__icontains=search_query)
+            Q(title__icontains=search) |
+            Q(description__icontains=search)
         )
 
-    # Фильтр по категории
     if category:
         announcements = announcements.filter(category=category)
 
-    # Получаем ID сохранённых объявлений
-    saved_ids = []
+    context = {
+        'announcements': announcements,
+        'search': search,
+        'selected_category': category,
+    }
 
-    if request.user.is_authenticated:
-        saved_ids = SavedAnnouncement.objects.filter(
-            user=request.user
-        ).values_list('announcement_id', flat=True)
-
-    return render_page(
-        request,
-        'home',
-        announcements=announcements,
-        search_query=search_query,
-        selected_category=category,
-        categories=Announcement.CATEGORY_CHOICES,
-        saved_ids=saved_ids
-    )
+    return render_page(request, 'home', context)
 
 
-# Страница отдельного объявления
 def announcement_detail(request, announcement_id):
     announcement = get_object_or_404(
-        Announcement.objects.select_related('user').annotate(
-            subscriptions_count=Count('subscriptions', distinct=True),
-            saved_count=Count('saved_by', distinct=True)
-        ),
+        Announcement,
         id=announcement_id,
         is_active=True
     )
@@ -101,42 +72,33 @@ def announcement_detail(request, announcement_id):
             announcement=announcement
         ).exists()
 
-    return render_page(
-        request,
-        'detail',
-        announcement=announcement,
-        is_subscribed=is_subscribed,
-        is_saved=is_saved
-    )
+    context = {
+        'announcement': announcement,
+        'is_subscribed': is_subscribed,
+        'is_saved': is_saved,
+    }
+
+    return render_page(request, 'detail', context)
 
 
-# Создание объявления
 @login_required
 def create_announcement(request):
-    form = AnnouncementForm(request.POST or None)
+    if request.method == 'POST':
+        form = AnnouncementForm(request.POST)
 
-    if request.method == 'POST' and form.is_valid():
-        announcement = form.save(commit=False)
-        announcement.user = request.user
-        announcement.save()
+        if form.is_valid():
+            announcement = form.save(commit=False)
+            announcement.user = request.user
+            announcement.save()
 
-        messages.success(request, 'Объявление опубликовано!')
+            messages.success(request, 'Объявление создано.')
+            return redirect('announcement_detail', announcement_id=announcement.id)
+    else:
+        form = AnnouncementForm()
 
-        return redirect(
-            'announcement_detail',
-            announcement_id=announcement.id
-        )
-
-    return render_page(
-        request,
-        'form',
-        form=form,
-        page_title='Создать объявление',
-        button_text='Опубликовать'
-    )
+    return render_page(request, 'form', {'form': form})
 
 
-# Редактирование объявления
 @login_required
 def edit_announcement(request, announcement_id):
     announcement = get_object_or_404(
@@ -145,32 +107,23 @@ def edit_announcement(request, announcement_id):
         user=request.user
     )
 
-    form = AnnouncementForm(
-        request.POST or None,
-        instance=announcement
-    )
+    if request.method == 'POST':
+        form = AnnouncementForm(request.POST, instance=announcement)
 
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        messages.success(request, 'Объявление обновлено!')
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Объявление обновлено.')
+            return redirect('announcement_detail', announcement_id=announcement.id)
+    else:
+        form = AnnouncementForm(instance=announcement)
 
-        return redirect(
-            'announcement_detail',
-            announcement_id=announcement.id
-        )
-
-    return render_page(
-        request,
-        'form',
-        form=form,
-        page_title='Редактировать объявление',
-        button_text='Сохранить изменения'
-    )
+    return render_page(request, 'form', {
+        'form': form,
+        'announcement': announcement,
+    })
 
 
-# Удаление объявления
 @login_required
-@require_POST
 def delete_announcement(request, announcement_id):
     announcement = get_object_or_404(
         Announcement,
@@ -178,61 +131,63 @@ def delete_announcement(request, announcement_id):
         user=request.user
     )
 
-    announcement.delete()
-    messages.success(request, 'Объявление удалено.')
+    if request.method == 'POST':
+        announcement.delete()
+        messages.success(request, 'Объявление удалено.')
+        return redirect('my_announcements')
 
-    return redirect('my_announcements')
+    return render_page(request, 'detail', {
+        'announcement': announcement,
+        'confirm_delete': True,
+    })
 
 
-# Мои объявления
 @login_required
 def my_announcements(request):
     announcements = Announcement.objects.filter(
         user=request.user
-    ).annotate(
-        subscriptions_count=Count('subscriptions', distinct=True)
-    )
+    ).order_by('-created_at')
 
-    return render_page(
-        request,
-        'my',
-        announcements=announcements
-    )
+    return render_page(request, 'my', {
+        'announcements': announcements,
+    })
 
 
-# Объявления, на которые подписан пользователь
 @login_required
 def subscriptions(request):
-    announcements = Announcement.objects.filter(
-        subscriptions__user=request.user,
-        is_active=True
-    ).select_related('user').distinct()
+    subscriptions_list = AnnouncementSubscription.objects.filter(
+        user=request.user
+    ).select_related('announcement')
 
-    return render_page(
-        request,
-        'subscriptions',
-        announcements=announcements
-    )
+    announcements = []
+
+    for subscription in subscriptions_list:
+        if subscription.announcement.is_active:
+            announcements.append(subscription.announcement)
+
+    return render_page(request, 'subscriptions', {
+        'announcements': announcements,
+    })
 
 
-# Сохранённые объявления
 @login_required
 def saved_announcements(request):
-    announcements = Announcement.objects.filter(
-        saved_by__user=request.user,
-        is_active=True
-    ).select_related('user').distinct()
+    saved_list = SavedAnnouncement.objects.filter(
+        user=request.user
+    ).select_related('announcement')
 
-    return render_page(
-        request,
-        'saved',
-        announcements=announcements
-    )
+    announcements = []
+
+    for saved in saved_list:
+        if saved.announcement.is_active:
+            announcements.append(saved.announcement)
+
+    return render_page(request, 'saved', {
+        'announcements': announcements,
+    })
 
 
-# Подписка на объявление
 @login_required
-@require_POST
 def subscribe_announcement(request, announcement_id):
     announcement = get_object_or_404(
         Announcement,
@@ -240,35 +195,25 @@ def subscribe_announcement(request, announcement_id):
         is_active=True
     )
 
-    if announcement.user != request.user:
-        AnnouncementSubscription.objects.get_or_create(
+    subscription = AnnouncementSubscription.objects.filter(
+        user=request.user,
+        announcement=announcement
+    )
+
+    if subscription.exists():
+        subscription.delete()
+        messages.success(request, 'Вы отписались от объявления.')
+    else:
+        AnnouncementSubscription.objects.create(
             user=request.user,
             announcement=announcement
         )
+        messages.success(request, 'Вы подписались на объявление.')
 
-    return action_redirect(request, announcement)
+    return action_redirect(request)
 
 
-# Отписка от объявления
 @login_required
-@require_POST
-def unsubscribe_announcement(request, announcement_id):
-    announcement = get_object_or_404(
-        Announcement,
-        id=announcement_id
-    )
-
-    AnnouncementSubscription.objects.filter(
-        user=request.user,
-        announcement=announcement
-    ).delete()
-
-    return action_redirect(request, announcement)
-
-
-# Сохранение объявления
-@login_required
-@require_POST
 def save_announcement(request, announcement_id):
     announcement = get_object_or_404(
         Announcement,
@@ -276,46 +221,71 @@ def save_announcement(request, announcement_id):
         is_active=True
     )
 
-    if announcement.user != request.user:
-        SavedAnnouncement.objects.get_or_create(
+    saved = SavedAnnouncement.objects.filter(
+        user=request.user,
+        announcement=announcement
+    )
+
+    if saved.exists():
+        saved.delete()
+        messages.success(request, 'Объявление удалено из сохранённых.')
+    else:
+        SavedAnnouncement.objects.create(
             user=request.user,
             announcement=announcement
         )
+        messages.success(request, 'Объявление сохранено.')
 
-    return action_redirect(request, announcement)
+    return action_redirect(request)
 
 
-# Удаление из сохранённых
+def register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+
+            messages.success(request, 'Регистрация прошла успешно.')
+            return redirect('home')
+    else:
+        form = UserCreationForm()
+
+    return render_page(request, 'register', {
+        'form': form,
+    })
 @login_required
-@require_POST
+def unsubscribe_announcement(request, announcement_id):
+    announcement = get_object_or_404(
+        Announcement,
+        id=announcement_id
+    )
+
+    subscription = AnnouncementSubscription.objects.filter(
+        user=request.user,
+        announcement=announcement
+    )
+
+    subscription.delete()
+
+    messages.success(request, 'Вы отписались от объявления.')
+
+    return action_redirect(request)
+@login_required
 def unsave_announcement(request, announcement_id):
     announcement = get_object_or_404(
         Announcement,
         id=announcement_id
     )
 
-    SavedAnnouncement.objects.filter(
+    saved = SavedAnnouncement.objects.filter(
         user=request.user,
         announcement=announcement
-    ).delete()
-
-    return action_redirect(request, announcement)
-
-
-# Регистрация
-def register(request):
-    form = UserCreationForm(request.POST or None)
-
-    if request.method == 'POST' and form.is_valid():
-        user = form.save()
-        login(request, user)
-
-        messages.success(request, 'Аккаунт успешно создан!')
-
-        return redirect('home')
-
-    return render_page(
-        request,
-        'register',
-        form=form
     )
+
+    saved.delete()
+
+    messages.success(request, 'Объявление удалено из избранного.')
+
+    return action_redirect(request)
